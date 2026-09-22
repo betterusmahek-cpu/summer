@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cognitive &amp; Attention Screening Instrument — Research Prototype</title>
+<meta name="description" content="A research prototype for LLM-assisted multidomain screening of attention and cognitive patterns. Not a diagnostic tool." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="brand-text">
+        <span class="brand-name">Multidomain Screening Instrument</span>
+        <span class="brand-tag">Research prototype &middot; not a diagnostic tool</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============================= INTRO ============================= -->
+    <section id="screen-intro" class="screen" aria-labelledby="intro-heading">
+      <div class="panel panel-intro">
+        <p class="eyebrow">Before you begin</p>
+        <h1 id="intro-heading">A research screening instrument for attention and cognitive patterns</h1>
+        <p class="lede">
+          This questionnaire asks 30 questions about attention, memory, thinking, and daily
+          functioning. Your answers are converted into a set of domain scores and passed through
+          a transparent, rule-based classifier that places the overall pattern into one of five
+          research categories.
+        </p>
+
+        <div class="notice-block" role="note">
+          <p class="notice-title">This is not a medical diagnosis.</p>
+          <p>
+            The result is a <strong>research screening classification</strong>, not a clinical
+            evaluation. It has not been validated against DSM-5 criteria or any diagnostic
+            reference standard. Please discuss any concerns about your attention, memory, or
+            thinking with a qualified healthcare professional.
+          </p>
+        </div>
+
+        <ul class="intro-facts">
+          <li><span class="fact-num">30</span> questions, grouped into 10 short sections</li>
+          <li><span class="fact-num">~6</span> minutes to complete</li>
+          <li><span class="fact-num">0</span> identifying information collected &mdash; no name, phone, or ID is requested</li>
+          <li><span class="fact-num">&mdash;</span> responses are not stored by default</li>
+        </ul>
+
+        <label class="llm-toggle" for="use-llm-checkbox">
+          <input type="checkbox" id="use-llm-checkbox" />
+          <span class="llm-toggle-text">
+            <span class="llm-toggle-title">Use LLM-assisted feature extraction</span>
+            <span class="llm-toggle-note">
+              Routes your responses through a research-extraction LLM step instead of the
+              deterministic scorer. Requires an API key configured on the server; if unavailable
+              or it fails, results automatically fall back to deterministic scoring and the
+              results page will say so.
+            </span>
+          </span>
+        </label>
+
+        <button id="btn-start" class="btn btn-primary" type="button">Begin screening</button>
+      </div>
+    </section>
+
+    <!-- ========================= QUESTIONNAIRE ========================== -->
+    <section id="screen-questionnaire" class="screen is-hidden" aria-labelledby="q-section-title">
+
+      <div class="q-rail" aria-hidden="true">
+        <ol id="rail-list" class="rail-list"></ol>
+      </div>
+
+      <div class="q-main">
+        <div class="q-progress-strip">
+          <span id="q-counter" class="q-counter">Question 1 of 30</span>
+          <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progress-track">
+            <div id="progress-fill" class="progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <form id="q-form" novalidate>
+          <p class="eyebrow" id="q-section-title">Section</p>
+          <h2 id="q-text" class="q-text"></h2>
+
+          <div id="q-scale" class="q-scale" role="radiogroup" aria-labelledby="q-text"></div>
+
+          <p id="q-error" class="field-error is-hidden" role="alert">Please select a response before continuing.</p>
+
+          <div class="q-nav">
+            <button type="button" id="btn-back" class="btn btn-ghost" disabled>Back</button>
+            <button type="submit" id="btn-next" class="btn btn-primary">Next</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================= LOADING ============================ -->
+    <section id="screen-loading" class="screen is-hidden" aria-live="polite">
+      <div class="panel panel-center">
+        <div class="loader" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p class="loading-label">Scoring domain features&hellip;</p>
+      </div>
+    </section>
+
+    <!-- ============================= RESULTS ============================ -->
+    <section id="screen-results" class="screen is-hidden" aria-labelledby="results-heading">
+      <div class="panel panel-results">
+
+        <p class="eyebrow">Screening result</p>
+        <h1 id="results-label" class="results-label">&mdash;</h1>
+
+        <div class="confidence-row">
+          <span class="confidence-tag">Prototype confidence</span>
+          <span id="results-confidence" class="confidence-value">&mdash;</span>
+        </div>
+
+        <p id="extraction-method-note" class="extraction-method-note is-hidden"></p>
+
+        <div class="disclaimer-block" role="note">
+          <p id="results-disclaimer"></p>
+        </div>
+
+        <h3 class="panel-subhead">Domain profile</h3>
+        <p class="panel-subhead-note">Each domain is scored 0&ndash;4 from your responses. Longer bars indicate more frequent or severe reported difficulty in that domain.</p>
+        <div id="signal-panel" class="signal-panel"></div>
+
+        <h3 class="panel-subhead">Rationale</h3>
+        <p id="results-rationale" class="rationale-text"></p>
+
+        <div id="contributing-wrap" class="contributing-wrap is-hidden">
+          <h3 class="panel-subhead">Main contributing domains</h3>
+          <ul id="contributing-list" class="contributing-list"></ul>
+        </div>
+
+        <div class="results-actions">
+          <button id="btn-restart" class="btn btn-ghost" type="button">Start a new screening</button>
+        </div>
+
+        <p class="fine-print">
+          Screening category assignment is based on a prototype rule-based classifier over
+          self-reported responses. It is not a validated diagnostic instrument and should not be
+          used as the sole basis for any medical or clinical decision.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================== ERROR ============================= -->
+    <section id="screen-error" class="screen is-hidden" aria-labelledby="error-heading">
+      <div class="panel panel-center">
+        <p class="eyebrow">Something went wrong</p>
+        <h1 id="error-heading" class="results-label">We couldn't complete scoring</h1>
+        <p id="error-message" class="lede">Please try again.</p>
+        <button id="btn-error-retry" class="btn btn-primary" type="button">Try again</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Research prototype &middot; screening output only &middot; not a substitute for professional evaluation</p>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
